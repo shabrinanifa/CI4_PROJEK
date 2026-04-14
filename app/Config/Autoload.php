@@ -88,5 +88,7 @@ class Autoload extends AutoloadConfig
      *
      * @var list<string>
      */
-    public $helpers = [];
+    public $helpers = [
+        'https://codeigniter.com/user_guide/helpers/index.html '
+    ];
 }
