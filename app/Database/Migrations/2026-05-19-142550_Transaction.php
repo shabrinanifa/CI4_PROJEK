@@ -21,16 +21,18 @@ class Transaction extends Migration
                 'null' => FALSE,
             ],
             'total_harga' => [
-                'type' => 'DOUBLE',
-                'null' => FALSE,
+                'type'       => 'DECIMAL',
+                'constraint' => '10,2',
+                'null'       => FALSE,
             ],
             'alamat' => [
                 'type' => 'TEXT',
                 'null' => FALSE,
             ],
             'ongkir' => [
-                'type' => 'DOUBLE',
-                'null' => TRUE
+                'type'       => 'DECIMAL',
+                'constraint' => '10,2',
+                'null'       => TRUE
             ],
             'status' => [
                 'type' => 'INT',

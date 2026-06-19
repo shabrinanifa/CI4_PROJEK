@@ -7,27 +7,24 @@ use CodeIgniter\Database\Migration;
 class AddDeletedAtToTables extends Migration
 {
     public function up()
-    {
-        $fields = [
-            'deleted_at' => [
-                'type' => 'DATETIME',
-                'null' => true,
-                'after' => 'updated_at'
-            ]
-        ];
+        {
+            // Jalankan satu-satu dengan array baru agar tidak bentrok
+            $this->forge->addColumn('user', [
+                'deleted_at' => ['type' => 'DATETIME', 'null' => true, 'after' => 'updated_at']
+            ]);
 
-        // user
-        $this->forge->addColumn('user', $fields);
+            $this->forge->addColumn('product', [
+                'deleted_at' => ['type' => 'DATETIME', 'null' => true, 'after' => 'updated_at']
+            ]);
 
-        // product
-        $this->forge->addColumn('product', $fields);
+            $this->forge->addColumn('transaction', [
+                'deleted_at' => ['type' => 'DATETIME', 'null' => true, 'after' => 'updated_at']
+            ]);
 
-        // transaction
-        $this->forge->addColumn('transaction', $fields);
-
-        // transaction_detail
-        $this->forge->addColumn('transaction_detail', $fields);
-    }
+            $this->forge->addColumn('transaction_detail', [
+                'deleted_at' => ['type' => 'DATETIME', 'null' => true, 'after' => 'updated_at']
+            ]);
+        }
 
     public function down()
     {

@@ -22,6 +22,7 @@ class Product extends Migration
             ],
             'harga' => [
                 'type' => 'DOUBLE',
+                'constraint' => '10,2',
                 'null' => FALSE,
             ],
             'jumlah' => [

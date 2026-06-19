@@ -31,12 +31,14 @@ class TransactionDetail extends Migration
                 'null' => FALSE,
             ],
             'diskon' => [
-                'type' => 'DOUBLE',
-                'null' => TRUE,
+                'type'       => 'DECIMAL',
+                'constraint' => '10,2',
+                'null'       => TRUE,
             ],
             'subtotal_harga' => [
-                'type' => 'DOUBLE',
-                'null' => FALSE,
+                'type'       => 'DECIMAL',
+                'constraint' => '10,2',
+                'null'       => FALSE,
             ],
             'created_at' => [
                 'type' => 'datetime',
