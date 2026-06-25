@@ -1,5 +1,6 @@
 <?= $this->extend('layout') ?>
 <?= $this->section('content') ?>
+
 <?php
 if (session()->getFlashData('success')) {
 ?>
@@ -51,13 +52,13 @@ if (session()->getFlashData('success')) {
     <?= "Total = " . number_to_currency($total, 'IDR') ?>
 </div>
 
-
-
- 
 <button type="submit" class="btn btn-primary">Perbarui Keranjang</button>
 
 <a class="btn btn-warning" href="<?= base_url() ?>keranjang/clear">Kosongkan Keranjang</a>
 
-<a class="btn btn-success" href="<?= base_url('checkout') ?>">Selesai Belanja</a>  <!-- tambah ini -->
+<?php if (!empty($items)): ?>
+    <a class="btn btn-success" href="<?php echo base_url() ?>checkout">Selesai Belanja</a>  <!-- tambah ini -->
+<?php endif; ?>
+
 <?= form_close() ?>
 <?= $this->endSection() ?>

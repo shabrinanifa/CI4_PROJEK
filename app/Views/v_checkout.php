@@ -3,13 +3,14 @@
 
 <div class="row">
     <div class="col-lg-6">
-        form
-    </div>
-    <div class="col-lg-6">
         <?= form_open('buy', 'class="row g-3"') ?>
 
 <?= form_hidden('username', session()->get('username')) ?>
-<?= form_hidden('total_harga', '', ['id' => 'total_harga']) ?>
+<?= form_input([
+    'type' => 'hidden',
+    'name' => 'total_harga',
+    'id' => 'total_harga'
+]) ?>
 
 <div class="col-12">
     <?= form_label('Nama', 'nama', ['class' => 'form-label']) ?>
@@ -51,6 +52,9 @@
 </div>
 
 <?= form_close() ?> 
+
+</div>
+<div class="col-lg-6">
         <table class="table">
   <thead>
       <tr>
@@ -89,74 +93,82 @@
 </table>
     </div>
 </div>
-<?php
-d($items);
-d($total);
-?>
 
 <?= $this->endSection() ?>
+
 <?= $this->section('script') ?>
 <script>
 $(document).ready(function() {
     let ongkir = 0;
-let subtotal = <?= $total ?>;
-hitungTotal();
-$.ajax({
-    url: "<?= site_url('ajax/costs') ?>", 
-    dataType: "json",
-    data: {
-        destination: id_kelurahan
-    },
-    success: function (data) { 
-        data.forEach(function (item) {
-            $("#layanan").append(
-                $('<option>', {
-                    value: item.cost,
-                    text: `${item.description} (${item.service}) : estimasi ${item.etd}`
-                })
-            );
-        });
-    }
-});
-
-function hitungTotal() {
-    let total = subtotal + ongkir;
-
-    $("#ongkir").val(ongkir);
-    $("#total").text(`IDR ${total.toLocaleString('id-ID')}`);
-    $("#total_harga").val(total);
-}
-	$('#kelurahan').select2({
-	    placeholder: 'Cari daerah tujuan',
-	    minimumInputLength: 3, 
-        ajax: {
-    url: '<?= site_url('ajax/destinations') ?>',
-    dataType: 'json',
-    delay: 300,
-    data: function(params) {
-        return {
-            q: params.term
-        };
-    },
-    processResults: function(data) {
-        return data;
-    },
-    cache: true
-}
-	});
-    $("#kelurahan").on('change', function () {
-    let id_kelurahan = $(this).val();
-
-    $("#layanan").empty();
-    ongkir = 0;
-    hitungTotal(); 
-
-    console.log(id_kelurahan);
-});
-$("#layanan").on('change', function() {
-    ongkir = parseInt($(this).val());
+    let subtotal = <?= $total ?>; //
+    
     hitungTotal();
-}); 
+
+    function hitungTotal() {
+        let total = subtotal + ongkir;
+        $("#ongkir").val(ongkir);
+        $("#total").text(`IDR ${total.toLocaleString('id-ID')}`);
+        $("#total_harga").val(total);
+    }
+
+    // Inisialisasi Select2 Kelurahan
+    $('#kelurahan').select2({
+        placeholder: 'Cari daerah tujuan',
+        minimumInputLength: 3, 
+        ajax: {
+            url: '<?= site_url('ajax/destinations') ?>', //
+            dataType: 'json',
+            delay: 300,
+            data: function(params) {
+                return {
+                    q: params.term
+                };
+            },
+            processResults: function(data) {
+                // Di controller Anda membungkus datanya dengan array 'results'
+                // Maka di sini harus diarahkan ke data.results
+                return {
+                    results: data.results
+                };
+            },
+            cache: true
+        }
+    });
+
+    // Jalankan pencarian biaya ongkir HANYA saat kelurahan diubah/dipilih
+    $("#kelurahan").on('change', function () {
+        let id_kelurahan = $(this).val(); //
+
+        $("#layanan").empty();
+        ongkir = 0;
+        hitungTotal(); 
+
+        if (id_kelurahan) {
+            $.ajax({
+                url: "<?= site_url('ajax/costs') ?>", //
+                dataType: "json",
+                data: {
+                    destination: id_kelurahan
+                },
+                success: function (data) { 
+                    $("#layanan").append($('<option>', { value: '', text: '- Pilih Layanan -' }));
+                    data.forEach(function (item) {
+                        $("#layanan").append(
+                            $('<option>', {
+                                value: item.cost,
+                                text: `${item.description} (${item.service}) : estimasi ${item.etd}`
+                            })
+                        );
+                    });
+                }
+            });
+        }
+    });
+
+    $("#layanan").on('change', function() {
+        ongkir = parseInt($(this).val()) || 0;
+        hitungTotal();
+    }); 
 });
 </script>
 <?= $this->endSection() ?>

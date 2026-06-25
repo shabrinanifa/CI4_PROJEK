@@ -9,21 +9,65 @@ use App\Models\ProductModel;
 use Dompdf\Dompdf;
 
 class ProdukController extends BaseController
-{
+{ 
+    
 
 protected $productModel; 
 
+protected $model;  
+private $token;
+
 function __construct()
-{
-    helper('form');
-    $this->productModel = new ProductModel();
+{ 
+    $this->model = new ProductModel(); 
+    $this->token = env('MY_API_KEY');
 }
-    public function index()
-    {
-        return view('produk/index', [
-    'products' => $this->productModel->findAll()
-]);
+
+private function authenticate()
+{
+    $header = $this->request->getHeaderLine('Authorization');
+
+    if (empty($header)) {
+        return false;
     }
+
+    if (!preg_match('/Bearer\s+(.*)$/i', $header, $matches)) {
+        return false;
+    }
+
+    return $matches[1] === $this->token;
+}
+
+private function unauthorized()
+{
+    return $this->respond([
+        'status'  => false,
+        'message' => 'Unauthorized'
+    ], 401);
+}
+public function index()
+{
+    if (!$this->authenticate()) {
+        return $this->unauthorized();
+    }
+
+    $page = (int) ($this->request->getGet('page') ?? 1);
+    $perPage = (int) ($this->request->getGet('per_page') ?? 10);
+
+    $products = $this->model->paginate($perPage, 'default', $page);
+
+    return $this->respond([
+        'data' => $products,
+        'pagination' => [
+            'current_page' => $page,
+            'per_page'     => $perPage,
+            'last_page'    => $this->model->pager->getPageCount(),
+            'total_data'   => $this->model->pager->getTotal(),
+            'has_next'     => $page < $this->model->pager->getPageCount(),
+            'has_prev'     => $page > 1,
+        ]
+    ]);
+}
     public function create()
 {
     $dataFoto = $this->request->getFile('foto');

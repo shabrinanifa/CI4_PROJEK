@@ -3,7 +3,7 @@
 namespace App\Controllers;
 
 use App\Controllers\BaseController;
-use codeIgniter\HTTP\ResponseInterface;
+use CodeIgniter\HTTP\ResponseInterface;
 use App\Services\RajaOngkirService;
 
 use App\Models\TransactionModel;
@@ -12,11 +12,16 @@ use App\Models\TransactionDetailModel;
 class TransaksiController extends BaseController
 {
     protected $cart;
+    protected $transactionModel;
+    protected $transactionDetailModel;
 
     public function __construct()
     {
         helper(['number', 'form']);
         $this->cart = service('cart');
+
+        $this->transactionModel = new TransactionModel();
+        $this->transactionDetailModel = new TransactionDetailModel();
     }
 
     public function index()
@@ -27,6 +32,70 @@ class TransaksiController extends BaseController
         ];
         return view('v_keranjang', $data);
     }
+
+    public function show($id = null)
+{
+    if (!$this->authenticate()) {
+        return $this->unauthorized();
+    }
+
+    $product = $this->model->find($id);
+
+    if (!$product) {
+        return $this->failNotFound('Produk tidak ditemukan');
+    }
+
+    return $this->respond($product);
+} 
+    public function create()
+{
+    if (!$this->authenticate()) {
+        return $this->unauthorized();
+    }
+
+    $data = $this->request->getJSON(true);
+
+    $this->model->insert($data);
+
+    return $this->respondCreated([
+        'message' => 'Produk berhasil ditambahkan'
+    ]);
+}
+    public function update($id = null)
+{
+    if (!$this->authenticate()) {
+        return $this->unauthorized();
+    }
+
+    if (!$this->model->find($id)) {
+        return $this->failNotFound('Produk tidak ditemukan');
+    }
+
+    $data = $this->request->getJSON(true);
+
+    $this->model->update($id, $data);
+
+    return $this->respond([
+        'message' => 'Produk berhasil diperbarui'
+    ]);
+}
+
+public function delete($id = null)
+{
+    if (!$this->authenticate()) {
+        return $this->unauthorized();
+    }
+
+    if (!$this->model->find($id)) {
+        return $this->failNotFound('Produk tidak ditemukan');
+    }
+
+    $this->model->delete($id);
+
+    return $this->respondDeleted([
+        'message' => 'Produk berhasil dihapus'
+    ]);
+}
 
     public function cart_add()
     {
@@ -183,5 +252,22 @@ public function buy()
 		//hapus session keranjang belanja 
     $this->cart->destroy();
     return redirect()->to(base_url());
+}
+public function history()
+{
+    $username = session()->get('username'); 
+ 
+    $transactions = $this->transactionModel->where('username', $username)->findAll();
+    $transactionIds = array_column($transactions, 'id');
+
+    $products = $this->transactionDetailModel->getProductsByTransactionIds($transactionIds);
+
+    $data = [
+        'username'      => $username,
+        'transactions'  => $transactions,
+        'products'      => $products
+    ]; 
+
+    return view('v_history', $data);
 }
 }
