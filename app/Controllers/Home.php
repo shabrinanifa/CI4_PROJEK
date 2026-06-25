@@ -7,14 +7,29 @@ use App\Models\ProductModel;
 class Home extends BaseController
 {
     protected $productModel;
-    function __construct(){
+
+    function __construct()
+    {
         helper(['number', 'form']);
-    $this->productModel = new ProductModel();
-}
+        $this->productModel = new ProductModel();
+    }
+
     public function index()
     {
         return view('v_home', [
-	'products' => $this->productModel->findAll()
-]);
+            'products' => $this->productModel->findAll()
+        ]);
+    }
+
+    public function profile()
+    {
+        $session = session();
+        return view('profile/index', [
+            'username'   => $session->get('username'),
+            'role'       => $session->get('role'),
+            'email'      => $session->get('email') ?? '-',
+            'login_time' => $session->get('login_time') ?? '-',
+            'status'     => $session->get('isLoggedIn') ?? false,
+        ]);
     }
 }

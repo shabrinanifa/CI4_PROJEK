@@ -50,9 +50,14 @@ if (session()->getFlashData('success')) {
 <div class="alert alert-info">
     <?= "Total = " . number_to_currency($total, 'IDR') ?>
 </div>
+
+
+
+ 
 <button type="submit" class="btn btn-primary">Perbarui Keranjang</button>
 
 <a class="btn btn-warning" href="<?= base_url() ?>keranjang/clear">Kosongkan Keranjang</a>
- 
+
+<a class="btn btn-success" href="<?= base_url('checkout') ?>">Selesai Belanja</a>  <!-- tambah ini -->
 <?= form_close() ?>
 <?= $this->endSection() ?>
