@@ -9,152 +9,100 @@ use App\Models\ProductModel;
 use Dompdf\Dompdf;
 
 class ProdukController extends BaseController
-{ 
-    
-
-protected $productModel; 
-
-protected $model;  
-private $token;
-
-function __construct()
-{ 
-    $this->model = new ProductModel(); 
-    $this->token = env('MY_API_KEY');
-}
-
-private function authenticate()
 {
-    $header = $this->request->getHeaderLine('Authorization');
+    protected $productModel;
 
-    if (empty($header)) {
-        return false;
+    function __construct()
+{
+    helper(['form']);
+    $this->productModel = new ProductModel(); }
+
+    public function index()
+    {
+        $data = [
+            'products' => $this->productModel->findAll()
+        ];
+
+        return view('Produk/index', $data);
     }
 
-    if (!preg_match('/Bearer\s+(.*)$/i', $header, $matches)) {
-        return false;
-    }
-
-    return $matches[1] === $this->token;
-}
-
-private function unauthorized()
-{
-    return $this->respond([
-        'status'  => false,
-        'message' => 'Unauthorized'
-    ], 401);
-}
-public function index()
-{
-    if (!$this->authenticate()) {
-        return $this->unauthorized();
-    }
-
-    $page = (int) ($this->request->getGet('page') ?? 1);
-    $perPage = (int) ($this->request->getGet('per_page') ?? 10);
-
-    $products = $this->model->paginate($perPage, 'default', $page);
-
-    return $this->respond([
-        'data' => $products,
-        'pagination' => [
-            'current_page' => $page,
-            'per_page'     => $perPage,
-            'last_page'    => $this->model->pager->getPageCount(),
-            'total_data'   => $this->model->pager->getTotal(),
-            'has_next'     => $page < $this->model->pager->getPageCount(),
-            'has_prev'     => $page > 1,
-        ]
-    ]);
-}
     public function create()
-{
-    $dataFoto = $this->request->getFile('foto');
-
-    $dataForm = [
-        'nama' => $this->request->getPost('nama'),
-        'harga' => $this->request->getPost('harga'),
-        'jumlah' => $this->request->getPost('jumlah') 
-    ];
-
-    if ($dataFoto->isValid()) {
-        $fileName = $dataFoto->getRandomName(); 
-        $dataFoto->move('img/', $fileName);
-        
-        $dataForm['foto'] = $fileName;
-    }
-
-    $this->productModel->insert($dataForm);
-
-    return redirect('produk')->with('success', 'Data Berhasil Ditambah');
-} 
-public function edit($id)
-{
-    $dataProduk = $this->productModel->find($id);
-
-    $dataForm = [
-        'nama' => $this->request->getPost('nama'),
-        'harga' => $this->request->getPost('harga'),
-        'jumlah' => $this->request->getPost('jumlah') 
-    ];
-
-    if ($this->request->getPost('check') == 1) {
-        if ($dataProduk['foto'] != '' and file_exists("img/" . $dataProduk['foto'] . "")) {
-            unlink("img/" . $dataProduk['foto']);
-        }
-
+    {
         $dataFoto = $this->request->getFile('foto');
+
+        $dataForm = [
+            'nama' => $this->request->getPost('nama'),
+            'harga' => $this->request->getPost('harga'),
+            'jumlah' => $this->request->getPost('jumlah')
+        ];
 
         if ($dataFoto->isValid()) {
             $fileName = $dataFoto->getRandomName();
             $dataFoto->move('img/', $fileName);
-            
+
             $dataForm['foto'] = $fileName;
         }
+
+        $this->productModel->insert($dataForm);
+
+        return redirect('produk')->with('success', 'Data Berhasil Ditambah');
     }
 
-    $this->productModel->update($id, $dataForm);
+    public function edit($id)
+    {
+        $dataProduk = $this->productModel->find($id);
 
-    return redirect('produk')->with('success', 'Data Berhasil Diubah');
+        $dataForm = [
+            'nama' => $this->request->getPost('nama'),
+            'harga' => $this->request->getPost('harga'),
+            'jumlah' => $this->request->getPost('jumlah')
+        ];
+
+        if ($this->request->getPost('check') == 1) {
+            if ($dataProduk['foto'] != '' and file_exists("img/" . $dataProduk['foto'] . "")) {
+                unlink("img/" . $dataProduk['foto']);
+            }
+
+            $dataFoto = $this->request->getFile('foto');
+
+            if ($dataFoto->isValid()) {
+                $fileName = $dataFoto->getRandomName();
+                $dataFoto->move('img/', $fileName);
+
+                $dataForm['foto'] = $fileName;
+            }
+        }
+
+        $this->productModel->update($id, $dataForm);
+
+        return redirect('produk')->with('success', 'Data Berhasil Diubah');
+    }
+
+    public function delete($id)
+    {
+        $dataProduk = $this->productModel->find($id);
+        $this->productModel->delete($id);
+
+        return redirect('produk')->with('success', 'Data Berhasil Dihapus');
+    }
+
+    public function download()
+    {
+        $products = $this->productModel->findAll();
+
+        $html = view('Produk/donwload_pdf', [
+            'products' => $products
+        ]);
+
+        $filename = date('Y-m-d-H-i-s') . '-produk.pdf';
+
+        $dompdf = new Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $dompdf->stream($filename, [
+            'Attachment' => true
+        ]);
+    }
 }
-
-public function delete($id)
-{
-    $dataProduk = $this->productModel->find($id);
-    $this->productModel->delete($id);
-
-    return redirect('produk')->with('success', 'Data Berhasil Dihapus');
-}
-public function download()
-{
-    // Ambil data produk dari database
-    $products = $this->productModel->findAll();
-
-    // Render view menjadi HTML
-    $html = view('produk/download_pdf', [
-        'products' => $products
-    ]);
-
-    // Nama file PDF
-    $filename = date('Y-m-d-H-i-s') . '-produk.pdf';
-
-    // Inisialisasi Dompdf
-    $dompdf = new Dompdf();
-
-    // Load HTML ke Dompdf
-    $dompdf->loadHtml($html);
-
-    // Setting ukuran kertas dan orientasi
-    $dompdf->setPaper('A4', 'portrait');
-
-    // Generate PDF
-    $dompdf->render();
-
-    // Download / tampilkan PDF
-    $dompdf->stream($filename, [
-        'Attachment' => true
-    ]);
-}
-}
-
